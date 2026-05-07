@@ -20,3 +20,6 @@ GET     /league     controllers.LeagueController.getTable()
 POST    /fixtures     controllers.FixtureController.generateFixtures()
 
 POST    /simulate     controllers.SimulationController.simulateMatches()
+
+POST    /players      controllers.PlayerController.addPlayer(request: Request)
+GET     /players      controllers.PlayerController.getPlayers()

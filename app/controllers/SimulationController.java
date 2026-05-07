@@ -2,15 +2,13 @@ package controllers;
 
 import play.mvc.*;
 import utils.DB;
+import utils.TeamStrength;
 
 import java.sql.*;
-import java.util.Random;
 
 public class SimulationController extends Controller {
 
     public Result simulateMatches() {
-
-        Random random = new Random();
 
         try (Connection conn = DB.getConnection()) {
 
@@ -23,11 +21,23 @@ public class SimulationController extends Controller {
 
                 long id = rs.getLong("id");
 
-                int homeGoals = random.nextInt(6); // 0–5 goals
-                int awayGoals = random.nextInt(6);
+                String homeTeam = rs.getString("home_team");
+                String awayTeam = rs.getString("away_team");
 
-                // 2. Update match with scores
-                String updateSql = "UPDATE matches SET home_goals = ?, away_goals = ? WHERE id = ?";
+                // 2. Get team strengths
+                double homeStrength = TeamStrength.getStrength(conn, homeTeam);
+                double awayStrength = TeamStrength.getStrength(conn, awayTeam);
+
+                // 3. Convert strength into realistic goals
+                int homeGoals = (int) Math.max(0,
+                        Math.round(homeStrength / 30 + Math.random() * 2));
+
+                int awayGoals = (int) Math.max(0,
+                        Math.round(awayStrength / 30 + Math.random() * 2));
+
+                // 4. Update match in DB
+                String updateSql =
+                        "UPDATE matches SET home_goals = ?, away_goals = ? WHERE id = ?";
 
                 PreparedStatement ps = conn.prepareStatement(updateSql);
                 ps.setInt(1, homeGoals);
@@ -37,7 +47,7 @@ public class SimulationController extends Controller {
                 ps.executeUpdate();
             }
 
-            return ok("Matches simulated successfully ");
+            return ok("Matches simulated successfully + team strength applied");
 
         } catch (Exception e) {
             return internalServerError(e.getMessage());
