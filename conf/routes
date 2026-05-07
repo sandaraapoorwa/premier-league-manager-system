@@ -14,3 +14,9 @@ GET     /clubs                      controllers.ClubController.getClubs()
 
 POST    /matches      controllers.MatchController.createMatch(request: Request)
 GET     /matches      controllers.MatchController.getMatches()
+
+GET     /league     controllers.LeagueController.getTable()
+
+POST    /fixtures     controllers.FixtureController.generateFixtures()
+
+POST    /simulate     controllers.SimulationController.simulateMatches()
