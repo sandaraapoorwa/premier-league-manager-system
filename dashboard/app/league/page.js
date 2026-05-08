@@ -1,6 +1,7 @@
 "use client";
 
-import api from "./lib/api";
+import api from "../lib/api";
+import logos from "../lib/logos";
 
 export default function Home() {
 
