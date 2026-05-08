@@ -23,3 +23,7 @@ POST    /simulate     controllers.SimulationController.simulateMatches()
 
 POST    /players      controllers.PlayerController.addPlayer(request: Request)
 GET     /players      controllers.PlayerController.getPlayers()
+
+POST    /play-season     controllers.SeasonController.playSeason()
+
+POST    /reset-season     controllers.ResetSeasonController.resetSeason()
