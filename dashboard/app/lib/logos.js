@@ -14,6 +14,10 @@ const logos = {
 
   Tottenham:
     "https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg",
+  
+  ManchesterUnited:
+  "https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg"
+
 
 };
 
