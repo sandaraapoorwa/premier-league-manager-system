@@ -5,16 +5,21 @@ import utils.DB;
 import utils.TeamStrength;
 
 import java.sql.*;
+import java.util.Random;
 
 public class SimulationController extends Controller {
 
     public Result simulateMatches() {
 
+        Random random = new Random();
+
         try (Connection conn = DB.getConnection()) {
 
-            // 1. Get all matches
+            // Get all matches
             String selectSql = "SELECT * FROM matches";
+
             Statement stmt = conn.createStatement();
+
             ResultSet rs = stmt.executeQuery(selectSql);
 
             while (rs.next()) {
@@ -24,22 +29,49 @@ public class SimulationController extends Controller {
                 String homeTeam = rs.getString("home_team");
                 String awayTeam = rs.getString("away_team");
 
-                // 2. Get team strengths
-                double homeStrength = TeamStrength.getStrength(conn, homeTeam);
-                double awayStrength = TeamStrength.getStrength(conn, awayTeam);
+                // TEAM STATS
+                int homeAttack =
+                        TeamStrength.getAttack(conn, homeTeam);
 
-                // 3. Convert strength into realistic goals
-                int homeGoals = (int) Math.max(0,
-                        Math.round(homeStrength / 30 + Math.random() * 2));
+                int homeDefense =
+                        TeamStrength.getDefense(conn, homeTeam);
 
-                int awayGoals = (int) Math.max(0,
-                        Math.round(awayStrength / 30 + Math.random() * 2));
+                int awayAttack =
+                        TeamStrength.getAttack(conn, awayTeam);
 
-                // 4. Update match in DB
+                int awayDefense =
+                        TeamStrength.getDefense(conn, awayTeam);
+
+                // HOME ADVANTAGE
+                homeAttack += 5;
+
+                // GOAL CHANCES
+                double homeChance =
+                        (homeAttack * 1.2) - (awayDefense * 0.8);
+
+                double awayChance =
+                        (awayAttack * 1.1) - (homeDefense * 0.9);
+
+                // REALISTIC GOALS
+                int homeGoals = Math.max(
+                        0,
+                        (int)(homeChance / 25 + random.nextInt(3))
+                );
+
+                int awayGoals = Math.max(
+                        0,
+                        (int)(awayChance / 25 + random.nextInt(3))
+                );
+
+                // UPDATE MATCH
                 String updateSql =
-                        "UPDATE matches SET home_goals = ?, away_goals = ? WHERE id = ?";
+                        "UPDATE matches " +
+                                "SET home_goals = ?, away_goals = ? " +
+                                "WHERE id = ?";
 
-                PreparedStatement ps = conn.prepareStatement(updateSql);
+                PreparedStatement ps =
+                        conn.prepareStatement(updateSql);
+
                 ps.setInt(1, homeGoals);
                 ps.setInt(2, awayGoals);
                 ps.setLong(3, id);
@@ -47,9 +79,12 @@ public class SimulationController extends Controller {
                 ps.executeUpdate();
             }
 
-            return ok("Matches simulated successfully + team strength applied");
+            return ok(
+                    "Matches simulated successfully ⚽"
+            );
 
         } catch (Exception e) {
+
             return internalServerError(e.getMessage());
         }
     }

@@ -8,10 +8,6 @@ GET     /                           controllers.ApplicationController.home()
 # Static assets
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 
-# Club APIs
-POST    /clubs                      controllers.ClubController.addClub(request: Request)
-GET     /clubs                      controllers.ClubController.getClubs()
-
 POST    /matches      controllers.MatchController.createMatch(request: Request)
 GET     /matches      controllers.MatchController.getMatches()
 
@@ -27,3 +23,9 @@ GET     /players      controllers.PlayerController.getPlayers()
 POST    /play-season     controllers.SeasonController.playSeason()
 
 POST    /reset-season     controllers.ResetSeasonController.resetSeason()
+
+GET     /teams      controllers.TeamController.getTeams()
+
+POST   /fixtures   controllers.FixtureController.generateFixtures()
+
+POST   /matchday/:id   controllers.MatchdayController.playNextMatchday(id: Int)

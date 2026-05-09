@@ -4,39 +4,71 @@ import play.mvc.*;
 import utils.DB;
 
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FixtureController extends Controller {
 
     public Result generateFixtures() {
 
-        List<String> teams = new ArrayList<>();
-
         try (Connection conn = DB.getConnection()) {
 
-            // 1. Get all teams from clubs table
             Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT name FROM clubs");
+
+            // Get all teams
+            ResultSet rs = stmt.executeQuery(
+                    "SELECT name FROM teams"
+            );
+
+            List<String> teams = new ArrayList<>();
 
             while (rs.next()) {
                 teams.add(rs.getString("name"));
             }
 
-            // 2. Generate all unique matches
+            // Clear old fixtures
+            stmt.executeUpdate("DELETE FROM matches");
+
+            PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO matches (home_team, away_team, matchday) VALUES (?, ?, ?)"
+            );
+
+            int matchday = 1;
+            int gamesPerRound = teams.size() / 2;
+            int gameCount = 0;
+
+            // ROUND ROBIN (no duplicates in same direction logic)
             for (int i = 0; i < teams.size(); i++) {
+
                 for (int j = i + 1; j < teams.size(); j++) {
 
-                    String home = teams.get(i);
-                    String away = teams.get(j);
+                    // Home match
+                    ps.setString(1, teams.get(i));
+                    ps.setString(2, teams.get(j));
+                    ps.setInt(3, matchday);
+                    ps.addBatch();
 
-                    String sql = "INSERT INTO matches (home_team, away_team, home_goals, away_goals) VALUES (?, ?, 0, 0)";
+                    gameCount++;
 
-                    PreparedStatement ps = conn.prepareStatement(sql);
-                    ps.setString(1, home);
-                    ps.setString(2, away);
-                    ps.executeUpdate();
+                    if (gameCount % gamesPerRound == 0) {
+                        matchday++;
+                    }
+
+                    // Away match
+                    ps.setString(1, teams.get(j));
+                    ps.setString(2, teams.get(i));
+                    ps.setInt(3, matchday);
+                    ps.addBatch();
+
+                    gameCount++;
+
+                    if (gameCount % gamesPerRound == 0) {
+                        matchday++;
+                    }
                 }
             }
+
+            ps.executeBatch();
 
             return ok("Fixtures generated successfully ⚽");
 

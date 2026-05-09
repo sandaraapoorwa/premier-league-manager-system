@@ -4,25 +4,37 @@ import java.sql.*;
 
 public class TeamStrength {
 
-    public static double getStrength(Connection conn, String club) throws Exception {
+    public static int getAttack(Connection conn, String teamName) throws Exception {
 
-        String sql = "SELECT rating FROM players WHERE club = ?";
+        String sql = "SELECT attack FROM teams WHERE name = ?";
 
-        PreparedStatement ps = conn.prepareStatement(sql);
-        ps.setString(1, club);
+        PreparedStatement stmt = conn.prepareStatement(sql);
 
-        ResultSet rs = ps.executeQuery();
+        stmt.setString(1, teamName);
 
-        int total = 0;
-        int count = 0;
+        ResultSet rs = stmt.executeQuery();
 
-        while (rs.next()) {
-            total += rs.getInt("rating");
-            count++;
+        if (rs.next()) {
+            return rs.getInt("attack");
         }
 
-        if (count == 0) return 70; // default weak team
+        return 70;
+    }
 
-        return (double) total / count;
+    public static int getDefense(Connection conn, String teamName) throws Exception {
+
+        String sql = "SELECT defense FROM teams WHERE name = ?";
+
+        PreparedStatement stmt = conn.prepareStatement(sql);
+
+        stmt.setString(1, teamName);
+
+        ResultSet rs = stmt.executeQuery();
+
+        if (rs.next()) {
+            return rs.getInt("defense");
+        }
+
+        return 70;
     }
 }
