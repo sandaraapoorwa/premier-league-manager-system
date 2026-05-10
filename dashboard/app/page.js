@@ -1,9 +1,13 @@
+/* eslint-disable react-hooks/immutability */
 "use client";
 
 import { useEffect, useState } from "react";
 import api from "./lib/api";
 import logos from "./lib/logos";
 import Calendar from "./calender/calender";
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
 export default function Home() {
   const [table,        setTable]        = useState([]);
@@ -101,12 +105,20 @@ export default function Home() {
 
   const tabStyle = (t) => ({
     fontFamily: "'Barlow Condensed', sans-serif",
-    fontSize: 15, fontWeight: 700, letterSpacing: "1px",
-    textTransform: "uppercase", padding: "8px 22px", borderRadius: 8,
+    fontSize: 15, 
+    fontWeight: 700, 
+    letterSpacing: "1px",
+    textTransform: "uppercase", 
+    padding: "8px 22px", 
+    borderRadius: 8,
     border: tab === t ? "1px solid rgba(255,255,255,0.15)" : "1px solid transparent",
     background: tab === t ? "rgba(255,255,255,0.07)" : "transparent",
     color: tab === t ? "#eef0f6" : "#3d5060",
-    cursor: "pointer", transition: "all 0.15s",
+    cursor: "pointer", 
+    transition: "all 0.15s",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
   });
 
   // Merge table data with allTeams so every team shows even with 0 stats
@@ -120,22 +132,41 @@ export default function Home() {
 
   return (
     <div style={{
-      minHeight: "100vh", padding: "32px 28px 56px",
-      position: "relative", zIndex: 1, fontFamily: "'Barlow', sans-serif",
+      minHeight: "100vh", 
+      padding: "32px 28px 56px",
+      position: "relative", 
+      zIndex: 1, 
+      fontFamily: "'Barlow', sans-serif",
     }}>
 
       {/* Header */}
       <header style={{ marginBottom: 24 }}>
-        <h1 style={{
-          fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: "clamp(40px, 5vw, 60px)",
-          letterSpacing: "3px", color: "#eef0f6", lineHeight: 1,
-        }}>
-          Football Manager
-        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <img 
+            src="https://upload.wikimedia.org/wikipedia/en/f/f2/Premier_League_Logo.svg"
+            alt="Premier League Logo"
+            style={{ 
+              height: "clamp(50px, 6vw, 80px)", 
+              width: "auto" 
+            }}
+          />
+          <h1 style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: "clamp(40px, 5vw, 60px)",
+            letterSpacing: "3px", 
+            color: "#eef0f6", 
+            lineHeight: 1,
+            margin: 0
+          }}>
+            Premier League Manager
+          </h1>
+        </div>
         <p style={{
           fontFamily: "'Barlow Condensed', sans-serif",
-          fontSize: 15, color: "#3d5060", letterSpacing: "0.5px", marginTop: 8,
+          fontSize: 15, 
+          color: "#3d5060", 
+          letterSpacing: "0.5px", 
+          marginTop: 8,
         }}>
           Simulate seasons · Track leagues · Build your legacy
         </p>
@@ -143,11 +174,20 @@ export default function Home() {
 
       {/* Tab switcher */}
       <div style={{
-        display: "flex", gap: 6, marginBottom: 28,
-        borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: 16,
+        display: "flex", 
+        gap: 6, 
+        marginBottom: 28,
+        borderBottom: "1px solid rgba(255,255,255,0.06)", 
+        paddingBottom: 16,
       }}>
-        <button style={tabStyle("league")}   onClick={() => setTab("league")}>⬛ League</button>
-        <button style={tabStyle("calendar")} onClick={() => setTab("calendar")}>📅 Calendar</button>
+        <button style={tabStyle("league")} onClick={() => setTab("league")}>
+          <SportsSoccerIcon sx={{ fontSize: 20 }} />
+          League
+        </button>
+        <button style={tabStyle("calendar")} onClick={() => setTab("calendar")}>
+          <CalendarMonthIcon sx={{ fontSize: 20 }} />
+          Calendar
+        </button>
       </div>
 
       {tab === "calendar" && <Calendar />}
@@ -161,8 +201,10 @@ export default function Home() {
             background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.3)",
             color: "#ffd700", fontFamily: "'Bebas Neue', sans-serif",
             fontSize: 20, letterSpacing: "2px", textAlign: "center",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
           }}>
-            🏆 SEASON COMPLETE — {displayTable[0]?.team} ARE CHAMPIONS!
+            <EmojiEventsIcon sx={{ fontSize: 28, color: "#ffd700" }} />
+            SEASON COMPLETE — {displayTable[0]?.team} ARE CHAMPIONS!
           </div>
         )}
 

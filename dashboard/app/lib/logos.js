@@ -59,6 +59,9 @@ Burnley:
 "Luton Town":
   "https://upload.wikimedia.org/wikipedia/en/9/9d/Luton_Town_logo.svg",
 
+"Main":
+   "https://upload.wikimedia.org/wikipedia/en/f/f2/Premier_League_Logo.svg",
+
 };
 
 export default logos;
