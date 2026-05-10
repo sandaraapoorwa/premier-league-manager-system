@@ -6,14 +6,39 @@ import logos from "./lib/logos";
 import Calendar from "./calender/calender";
 
 export default function Home() {
-  const [table,   setTable]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [busy,    setBusy]    = useState(null);
-  const [flash,   setFlash]   = useState(null);
-  const [error,   setError]   = useState(null);
-  const [tab,     setTab]     = useState("league");  // ← add this
+  const [table,        setTable]        = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [busy,         setBusy]         = useState(null);
+  const [flash,        setFlash]        = useState(null);
+  const [error,        setError]        = useState(null);
+  const [tab,          setTab]          = useState("league");
+  const [currentMD,    setCurrentMD]    = useState(0);
+  const [totalMD,      setTotalMD]      = useState(0);
+  const [allTeams,     setAllTeams]     = useState([]);
 
-  useEffect(() => { loadLeague(); }, []);
+  useEffect(() => {
+    loadLeague();
+    loadMatchdayStatus();
+    loadTeams();
+  }, []);
+
+  const loadTeams = async () => {
+    try {
+      const res = await api.get("/teams");
+      setAllTeams(res.data);
+    } catch {}
+  };
+
+  const loadMatchdayStatus = async () => {
+    try {
+      const res = await api.get("/matchdays/status");
+      const data = res.data;
+      if (!data.length) return;
+      setTotalMD(data.length);
+      const lastPlayed = [...data].reverse().find(d => d.status === "completed");
+      setCurrentMD(lastPlayed ? lastPlayed.matchday : 0);
+    } catch {}
+  };
 
   const loadLeague = async () => {
     try {
@@ -29,13 +54,36 @@ export default function Home() {
   const act = async (key, endpoint, label) => {
     setBusy(key);
     setError(null);
+    if (key === "reset") {
+      setTable([]);
+      setCurrentMD(0);
+    }
     try {
       await api.post(endpoint);
       await loadLeague();
-      setFlash(`${label} complete`);
-      setTimeout(() => setFlash(null), 3000);
+      await loadMatchdayStatus();
+      if (key === "reset") await loadTeams();
+      setFlash(
+        key === "matchday" ? null : `${label} complete`
+      );
+      if (key !== "matchday") setTimeout(() => setFlash(null), 3000);
     } catch {
       setError(`${label} failed — check your backend.`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const simulateNextMatchday = async () => {
+    setBusy("matchday");
+    setError(null);
+    try {
+      const next = currentMD + 1;
+      await api.post(`/matchday/${next}/simulate`);
+      await loadLeague();
+      await loadMatchdayStatus();
+    } catch {
+      setError("Simulate Matchday failed — check your backend.");
     } finally {
       setBusy(null);
     }
@@ -49,67 +97,93 @@ export default function Home() {
   };
 
   const gd = (t) => (t.goalsFor ?? 0) - (t.goalsAgainst ?? 0);
+  const isFinished = totalMD > 0 && currentMD >= totalMD;
 
-  // Tab button style helper
   const tabStyle = (t) => ({
     fontFamily: "'Barlow Condensed', sans-serif",
     fontSize: 15, fontWeight: 700, letterSpacing: "1px",
-    textTransform: "uppercase",
-    padding: "8px 22px",
-    borderRadius: 8,
+    textTransform: "uppercase", padding: "8px 22px", borderRadius: 8,
     border: tab === t ? "1px solid rgba(255,255,255,0.15)" : "1px solid transparent",
     background: tab === t ? "rgba(255,255,255,0.07)" : "transparent",
     color: tab === t ? "#eef0f6" : "#3d5060",
-    cursor: "pointer",
-    transition: "all 0.15s",
+    cursor: "pointer", transition: "all 0.15s",
   });
+
+  // Merge table data with allTeams so every team shows even with 0 stats
+  const displayTable = (() => {
+    if (table.length > 0) return table;
+    return allTeams.map(t => ({
+      team: t.name, played: 0, wins: 0, draws: 0,
+      losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0,
+    }));
+  })();
 
   return (
     <div style={{
-      minHeight: "100vh",
-      padding: "32px 28px 56px",
-      position: "relative",
-      zIndex: 1,
-      fontFamily: "'Barlow', sans-serif",
+      minHeight: "100vh", padding: "32px 28px 56px",
+      position: "relative", zIndex: 1, fontFamily: "'Barlow', sans-serif",
     }}>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <header style={{ marginBottom: 24 }}>
         <h1 style={{
           fontFamily: "'Bebas Neue', sans-serif",
           fontSize: "clamp(40px, 5vw, 60px)",
-          letterSpacing: "3px",
-          color: "#eef0f6",
-          lineHeight: 1,
+          letterSpacing: "3px", color: "#eef0f6", lineHeight: 1,
         }}>
           Football Manager
         </h1>
         <p style={{
           fontFamily: "'Barlow Condensed', sans-serif",
-          fontSize: 15,
-          color: "#3d5060",
-          letterSpacing: "0.5px",
-          marginTop: 8,
+          fontSize: 15, color: "#3d5060", letterSpacing: "0.5px", marginTop: 8,
         }}>
           Simulate seasons · Track leagues · Build your legacy
         </p>
       </header>
 
-      {/* ── Tab switcher ── */}
+      {/* Tab switcher */}
       <div style={{
         display: "flex", gap: 6, marginBottom: 28,
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        paddingBottom: 16,
+        borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: 16,
       }}>
-        <button style={tabStyle("league")}   onClick={() => setTab("league")}>   ⬛ League </button>
-        <button style={tabStyle("calendar")} onClick={() => setTab("calendar")}> 📅 Calendar </button>
+        <button style={tabStyle("league")}   onClick={() => setTab("league")}>⬛ League</button>
+        <button style={tabStyle("calendar")} onClick={() => setTab("calendar")}>📅 Calendar</button>
       </div>
 
-      {/* ── Calendar tab ── */}
       {tab === "calendar" && <Calendar />}
 
-      {/* ── League tab ── */}
       {tab === "league" && <>
+
+        {/* Season finished banner */}
+        {isFinished && (
+          <div style={{
+            marginBottom: 20, padding: "14px 20px", borderRadius: 12,
+            background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.3)",
+            color: "#ffd700", fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 20, letterSpacing: "2px", textAlign: "center",
+          }}>
+            🏆 SEASON COMPLETE — {displayTable[0]?.team} ARE CHAMPIONS!
+          </div>
+        )}
+
+        {/* Matchday progress badge */}
+        {!isFinished && currentMD > 0 && (
+          <div style={{
+            marginBottom: 20, padding: "10px 18px", borderRadius: 10,
+            background: "rgba(77,168,255,0.08)", border: "1px solid rgba(77,168,255,0.2)",
+            color: "#4da8ff", fontFamily: "'Barlow Condensed', sans-serif",
+            fontSize: 14, letterSpacing: "0.5px", display: "flex",
+            alignItems: "center", gap: 10,
+          }}>
+            <span style={{
+              background: "#4da8ff", color: "#000", borderRadius: 6,
+              padding: "2px 10px", fontWeight: 700, fontSize: 13,
+            }}>
+              MD {currentMD}/{totalMD}
+            </span>
+            Matchday {currentMD} simulated
+          </div>
+        )}
 
         {/* Notifications */}
         {flash && (
@@ -137,22 +211,21 @@ export default function Home() {
         <div style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: 14,
-          marginBottom: 36,
+          gap: 14, marginBottom: 36,
         }}>
           {[
-            { key: "season",   endpoint: "/play-season",  label: "Play Season",       sub: "Simulate a full league season",   icon: "▶" },
-            { key: "matchday", endpoint: "/simulate",      label: "Simulate Matchday", sub: "Play the next round of fixtures",  icon: "◈" },
-            { key: "reset",    endpoint: "/reset-season",  label: "Reset Season",      sub: "Wipe results and start fresh",     icon: "↺" },
-          ].map(({ key, endpoint, label, sub, icon }) => {
+            { key: "season",   label: "Play Season",       sub: "Simulate a full league season",  icon: "▶", onClick: () => act("season", "/play-season", "Play Season") },
+            { key: "matchday", label: isFinished ? "Season Done" : `Simulate Matchday ${currentMD + 1}`, sub: isFinished ? "Reset to play again" : `Play matchday ${currentMD + 1} of ${totalMD}`, icon: "◈", onClick: simulateNextMatchday, disabled: isFinished },
+            { key: "reset",    label: "Reset Season",      sub: "Wipe results and start fresh",   icon: "↺", onClick: () => act("reset", "/reset-season", "Reset Season") },
+          ].map(({ key, label, sub, icon, onClick, disabled }) => {
             const isActive = busy === key;
             return (
               <button
                 key={key}
-                onClick={() => act(key, endpoint, label)}
-                disabled={!!busy}
+                onClick={onClick}
+                disabled={!!busy || disabled}
                 onMouseEnter={(e) => {
-                  if (!busy) {
+                  if (!busy && !disabled) {
                     e.currentTarget.style.background  = "rgba(255,255,255,0.07)";
                     e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
                     e.currentTarget.style.transform   = "translateY(-3px)";
@@ -165,15 +238,12 @@ export default function Home() {
                 }}
                 style={{
                   background: isActive ? "rgba(0,200,100,0.08)" : "rgba(255,255,255,0.03)",
-                  backdropFilter: "blur(18px)",
-                  WebkitBackdropFilter: "blur(18px)",
+                  backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
                   border: `1px solid ${isActive ? "rgba(0,200,100,0.25)" : "rgba(255,255,255,0.08)"}`,
-                  borderRadius: 14,
-                  padding: "22px 20px 18px",
-                  textAlign: "left",
-                  cursor: busy ? "not-allowed" : "pointer",
+                  borderRadius: 14, padding: "22px 20px 18px", textAlign: "left",
+                  cursor: (busy || disabled) ? "not-allowed" : "pointer",
                   transition: "all 0.15s",
-                  opacity: busy && !isActive ? 0.4 : 1,
+                  opacity: (busy && !isActive) || disabled ? 0.4 : 1,
                   transform: "translateY(0)",
                 }}
               >
@@ -200,16 +270,12 @@ export default function Home() {
 
         {/* League table */}
         <div style={{
-          background: "rgba(255,255,255,0.03)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          border: "1px solid rgba(255,255,255,0.07)",
-          borderRadius: 18,
-          overflow: "hidden",
+          background: "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 18, overflow: "hidden",
         }}>
           <div style={{
-            padding: "18px 24px 14px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            padding: "18px 24px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)",
             display: "flex", alignItems: "center", justifyContent: "space-between",
           }}>
             <h2 style={{
@@ -236,11 +302,11 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Column headers */}
           <div style={{
             display: "grid",
             gridTemplateColumns: "32px 220px 44px 44px 44px 44px 52px 52px 52px 62px",
-            padding: "8px 24px",
-            borderBottom: "1px solid rgba(255,255,255,0.04)",
+            padding: "8px 24px", borderBottom: "1px solid rgba(255,255,255,0.04)",
           }}>
             {["#", "Club", "P", "W", "D", "L", "GF", "GA", "GD", "Pts"].map((h, i) => (
               <span key={i} style={{
@@ -254,6 +320,7 @@ export default function Home() {
             ))}
           </div>
 
+          {/* Rows */}
           {loading ? (
             Array.from({ length: 10 }).map((_, i) => (
               <div key={i} style={{
@@ -263,17 +330,10 @@ export default function Home() {
                 animationDelay: `${i * 0.08}s`,
               }} />
             ))
-          ) : table.length === 0 ? (
-            <div style={{
-              padding: "52px 24px", textAlign: "center",
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontSize: 16, color: "#1e2e3a", letterSpacing: "0.5px",
-            }}>
-              No data — simulate a season to populate the table.
-            </div>
           ) : (
-            table.map((t, i) => {
+            displayTable.map((t, i) => {
               const accent = accentOf(i);
+              const isEmpty = table.length === 0;
               return (
                 <div
                   key={i}
@@ -282,21 +342,20 @@ export default function Home() {
                   style={{
                     display: "grid",
                     gridTemplateColumns: "32px 220px 44px 44px 44px 44px 52px 52px 52px 62px",
-                    padding: "10px 24px",
-                    borderBottom: "1px solid rgba(255,255,255,0.028)",
+                    padding: "10px 24px", borderBottom: "1px solid rgba(255,255,255,0.028)",
                     alignItems: "center",
-                    background: i < 3 ? "rgba(255,255,255,0.018)" : "transparent",
-                    borderLeft: accent ? `2px solid ${accent}` : "2px solid transparent",
-                    transition: "background 0.12s",
-                    cursor: "default",
+                    background: i < 3 && !isEmpty ? "rgba(255,255,255,0.018)" : "transparent",
+                    borderLeft: !isEmpty && accent ? `2px solid ${accent}` : "2px solid transparent",
+                    transition: "background 0.12s", cursor: "default",
                     animation: "fm-fadeup 0.4s ease both",
                     animationDelay: `${i * 0.03}s`,
+                    opacity: isEmpty ? 0.4 : 1,
                   }}
                 >
                   <span style={{
                     fontFamily: "'Barlow Condensed', sans-serif",
                     fontSize: 13, fontWeight: 700,
-                    color: accent ?? "#1e2e3a", textAlign: "center",
+                    color: !isEmpty && accent ? accent : "#1e2e3a", textAlign: "center",
                   }}>
                     {i + 1}
                   </span>
@@ -310,8 +369,7 @@ export default function Home() {
                     ) : (
                       <div style={{
                         width: 26, height: 26, borderRadius: 6, flexShrink: 0,
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontFamily: "'Bebas Neue', sans-serif", fontSize: 8, color: "#3d5060",
                       }}>
@@ -331,28 +389,29 @@ export default function Home() {
                   {[t.played, t.wins, t.draws, t.losses, t.goalsFor, t.goalsAgainst].map((v, vi) => (
                     <span key={vi} style={{
                       fontFamily: "'Barlow Condensed', sans-serif",
-                      fontSize: 14, color: "#3d5060", textAlign: "center",
+                      fontSize: 14, color: isEmpty ? "#1e2e3a" : "#3d5060", textAlign: "center",
                     }}>
-                      {v ?? "—"}
+                      {isEmpty ? "—" : (v ?? "—")}
                     </span>
                   ))}
 
                   <span style={{
                     fontFamily: "'Barlow Condensed', sans-serif",
                     fontSize: 14, textAlign: "center",
-                    color: gd(t) > 0 ? "#00c870" : gd(t) < 0 ? "#e05050" : "#3d5060",
+                    color: isEmpty ? "#1e2e3a" : gd(t) > 0 ? "#00c870" : gd(t) < 0 ? "#e05050" : "#3d5060",
                   }}>
-                    {gd(t) > 0 ? `+${gd(t)}` : gd(t)}
+                    {isEmpty ? "—" : gd(t) > 0 ? `+${gd(t)}` : gd(t)}
                   </span>
 
                   <span style={{
                     fontFamily: "'Barlow Condensed', sans-serif",
-                    fontSize: 16, fontWeight: 700, color: "#eef0f6",
+                    fontSize: 16, fontWeight: 700,
+                    color: isEmpty ? "#1e2e3a" : "#eef0f6",
                     textAlign: "center",
-                    background: i < 3 ? "rgba(0,200,100,0.07)" : "transparent",
+                    background: i < 3 && !isEmpty ? "rgba(0,200,100,0.07)" : "transparent",
                     borderRadius: 6, padding: "2px 0",
                   }}>
-                    {t.points ?? "—"}
+                    {isEmpty ? "—" : (t.points ?? "—")}
                   </span>
                 </div>
               );

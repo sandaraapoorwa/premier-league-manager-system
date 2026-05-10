@@ -8,17 +8,14 @@ import java.sql.*;
 public class ResetSeasonController extends Controller {
 
     public Result resetSeason() {
-
         try (Connection conn = DB.getConnection()) {
-
             Statement stmt = conn.createStatement();
 
-            // 1. Reset match scores
             stmt.executeUpdate(
-                    "UPDATE matches SET home_goals = 0, away_goals = 0"
+                    "UPDATE matches SET home_goals = NULL, away_goals = NULL, goal_scorers = NULL"
             );
 
-            return ok("Season reset successfully");
+            return ok("Season reset successfully + shsshs");
 
         } catch (Exception e) {
             return internalServerError(e.getMessage());

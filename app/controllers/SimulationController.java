@@ -15,76 +15,43 @@ public class SimulationController extends Controller {
 
         try (Connection conn = DB.getConnection()) {
 
-            // Get all matches
-            String selectSql = "SELECT * FROM matches";
-
+            // Only fetch unplayed matches
             Statement stmt = conn.createStatement();
-
-            ResultSet rs = stmt.executeQuery(selectSql);
+            ResultSet rs = stmt.executeQuery(
+                    "SELECT * FROM matches WHERE home_goals IS NULL AND away_goals IS NULL"
+            );
 
             while (rs.next()) {
 
-                long id = rs.getLong("id");
-
+                long id        = rs.getLong("id");
                 String homeTeam = rs.getString("home_team");
                 String awayTeam = rs.getString("away_team");
 
-                // TEAM STATS
-                int homeAttack =
-                        TeamStrength.getAttack(conn, homeTeam);
+                int homeAttack  = TeamStrength.getAttack(conn, homeTeam);
+                int homeDefense = TeamStrength.getDefense(conn, homeTeam);
+                int awayAttack  = TeamStrength.getAttack(conn, awayTeam);
+                int awayDefense = TeamStrength.getDefense(conn, awayTeam);
 
-                int homeDefense =
-                        TeamStrength.getDefense(conn, homeTeam);
+                homeAttack += 5; // home advantage
 
-                int awayAttack =
-                        TeamStrength.getAttack(conn, awayTeam);
+                double homeChance = (homeAttack * 1.2) - (awayDefense * 0.8);
+                double awayChance = (awayAttack * 1.1) - (homeDefense * 0.9);
 
-                int awayDefense =
-                        TeamStrength.getDefense(conn, awayTeam);
+                int homeGoals = Math.max(0, (int)(homeChance / 25 + random.nextInt(3)));
+                int awayGoals = Math.max(0, (int)(awayChance / 25 + random.nextInt(3)));
 
-                // HOME ADVANTAGE
-                homeAttack += 5;
-
-                // GOAL CHANCES
-                double homeChance =
-                        (homeAttack * 1.2) - (awayDefense * 0.8);
-
-                double awayChance =
-                        (awayAttack * 1.1) - (homeDefense * 0.9);
-
-                // REALISTIC GOALS
-                int homeGoals = Math.max(
-                        0,
-                        (int)(homeChance / 25 + random.nextInt(3))
+                PreparedStatement ps = conn.prepareStatement(
+                        "UPDATE matches SET home_goals = ?, away_goals = ? WHERE id = ?"
                 );
-
-                int awayGoals = Math.max(
-                        0,
-                        (int)(awayChance / 25 + random.nextInt(3))
-                );
-
-                // UPDATE MATCH
-                String updateSql =
-                        "UPDATE matches " +
-                                "SET home_goals = ?, away_goals = ? " +
-                                "WHERE id = ?";
-
-                PreparedStatement ps =
-                        conn.prepareStatement(updateSql);
-
                 ps.setInt(1, homeGoals);
                 ps.setInt(2, awayGoals);
                 ps.setLong(3, id);
-
                 ps.executeUpdate();
             }
 
-            return ok(
-                    "Matches simulated successfully ⚽"
-            );
+            return ok("Matches simulated successfully ⚽");
 
         } catch (Exception e) {
-
             return internalServerError(e.getMessage());
         }
     }

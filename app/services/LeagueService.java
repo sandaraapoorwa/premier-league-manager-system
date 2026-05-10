@@ -14,7 +14,7 @@ public class LeagueService {
 
         try (Connection conn = DB.getConnection()) {
 
-            String sql = "SELECT * FROM matches";
+            String sql = "SELECT * FROM matches WHERE home_goals IS NOT NULL AND away_goals IS NOT NULL";
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
 
