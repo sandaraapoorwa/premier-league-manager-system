@@ -28,4 +28,8 @@ GET     /teams      controllers.TeamController.getTeams()
 
 POST   /fixtures   controllers.FixtureController.generateFixtures()
 
-POST   /matchday/:id   controllers.MatchdayController.playNextMatchday(id: Int)
+
+
+GET    /matchdays/status          controllers.MatchdayController.getStatus()
+GET    /matchday/:id              controllers.MatchdayController.getMatchday(id: Int)
+POST   /matchday/:id/simulate     controllers.MatchdayController.simulateMatchday(id: Int)
