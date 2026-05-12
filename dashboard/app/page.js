@@ -62,6 +62,7 @@ export default function Home() {
       setTable([]);
       setCurrentMD(0);
     }
+    
     try {
       await api.post(endpoint);
       await loadLeague();
