@@ -366,113 +366,229 @@ export default function Home() {
           {/* Rows */}
           {loading ? (
             Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} style={{
-                margin: "6px 24px", height: 44, borderRadius: 10,
-                background: "rgba(255,255,255,0.025)",
-                animation: "fm-pulse 1.5s ease infinite",
-                animationDelay: `${i * 0.08}s`,
-              }} />
+              <div
+                key={i}
+                className="animate-pulse rounded-[10px] bg-white/[0.025]"
+                style={{
+                  margin: "6px 24px",
+                  height: 44,
+                  animationDelay: `${i * 0.08}s`,
+                }}
+              />
             ))
           ) : (
             displayTable.map((t, i) => {
               const accent = accentOf(i);
               const isEmpty = table.length === 0;
+
               return (
                 <div
                   key={i}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.045)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = i < 3 ? "rgba(255,255,255,0.018)" : "transparent"; }}
+                  className={`border-b border-white/[0.028] transition-colors duration-150 cursor-default ${
+                    i < 3 && !isEmpty
+                      ? "bg-white/[0.018]"
+                      : "bg-transparent"
+                  }`}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background =
+                      "rgba(255,255,255,0.045)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background =
+                      i < 3
+                        ? "rgba(255,255,255,0.018)"
+                        : "transparent";
+                  }}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "32px 220px 44px 44px 44px 44px 52px 52px 52px 62px",
-                    padding: "10px 24px", borderBottom: "1px solid rgba(255,255,255,0.028)",
+                    gridTemplateColumns:
+                      "32px 220px 44px 44px 44px 44px 52px 52px 52px 62px",
+                    padding: "10px 24px",
                     alignItems: "center",
-                    background: i < 3 && !isEmpty ? "rgba(255,255,255,0.018)" : "transparent",
-                    borderLeft: !isEmpty && accent ? `2px solid ${accent}` : "2px solid transparent",
-                    transition: "background 0.12s", cursor: "default",
-                    animation: "fm-fadeup 0.4s ease both",
+                    borderLeft:
+                      !isEmpty && accent
+                        ? `2px solid ${accent}`
+                        : "2px solid transparent",
+                    // FIXED: Use individual animation properties instead of shorthand
+                    animationName: "fadeUp",
+                    animationDuration: "0.4s",
+                    animationTimingFunction: "ease",
+                    animationFillMode: "both",
                     animationDelay: `${i * 0.03}s`,
                     opacity: isEmpty ? 0.4 : 1,
                   }}
                 >
-                  <span style={{
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                    fontSize: 13, fontWeight: 700,
-                    color: !isEmpty && accent ? accent : "#1e2e3a", textAlign: "center",
-                  }}>
+                  {/* Position */}
+                  <span
+                    style={{
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color:
+                        !isEmpty && accent
+                          ? accent
+                          : "#1e2e3a",
+                      textAlign: "center",
+                    }}
+                  >
                     {i + 1}
                   </span>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {/* Club */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                    }}
+                  >
                     {logos?.[t.team] ? (
-                      <img src={logos[t.team]} alt={t.team} style={{
-                        width: 26, height: 26, objectFit: "contain", flexShrink: 0,
-                        filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.5))",
-                      }} />
+                      <img
+                        src={logos[t.team]}
+                        alt={t.team}
+                        style={{
+                          width: 26,
+                          height: 26,
+                          objectFit: "contain",
+                          flexShrink: 0,
+                          filter:
+                            "drop-shadow(0 1px 4px rgba(0,0,0,0.5))",
+                        }}
+                      />
                     ) : (
-                      <div style={{
-                        width: 26, height: 26, borderRadius: 6, flexShrink: 0,
-                        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontFamily: "'Bebas Neue', sans-serif", fontSize: 8, color: "#3d5060",
-                      }}>
-                        {(t.team ?? "?").slice(0, 3).toUpperCase()}
+                      <div
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 6,
+                          flexShrink: 0,
+                          background:
+                            "rgba(255,255,255,0.06)",
+                          border:
+                            "1px solid rgba(255,255,255,0.1)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontFamily:
+                            "'Bebas Neue', sans-serif",
+                          fontSize: 8,
+                          color: "#3d5060",
+                        }}
+                      >
+                        {(t.team ?? "?")
+                          .slice(0, 3)
+                          .toUpperCase()}
                       </div>
                     )}
-                    <span style={{
-                      fontFamily: "'Barlow Condensed', sans-serif",
-                      fontSize: 15, fontWeight: 600, color: "#c8d4e0",
-                      letterSpacing: "0.3px",
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
+
+                    <span
+                      style={{
+                        fontFamily:
+                          "'Barlow Condensed', sans-serif",
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "#c8d4e0",
+                        letterSpacing: "0.3px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {t.team}
                     </span>
                   </div>
 
-                  {[t.played, t.wins, t.draws, t.losses, t.goalsFor, t.goalsAgainst].map((v, vi) => (
-                    <span key={vi} style={{
-                      fontFamily: "'Barlow Condensed', sans-serif",
-                      fontSize: 14, color: isEmpty ? "#1e2e3a" : "#3d5060", textAlign: "center",
-                    }}>
-                      {isEmpty ? "—" : (v ?? "—")}
+                  {/* Stats */}
+                  {[
+                    t.played,
+                    t.wins,
+                    t.draws,
+                    t.losses,
+                    t.goalsFor,
+                    t.goalsAgainst,
+                  ].map((v, vi) => (
+                    <span
+                      key={vi}
+                      style={{
+                        fontFamily:
+                          "'Barlow Condensed', sans-serif",
+                        fontSize: 14,
+                        color: isEmpty
+                          ? "#1e2e3a"
+                          : "#3d5060",
+                        textAlign: "center",
+                      }}
+                    >
+                      {isEmpty ? "—" : v ?? "—"}
                     </span>
                   ))}
 
-                  <span style={{
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                    fontSize: 14, textAlign: "center",
-                    color: isEmpty ? "#1e2e3a" : gd(t) > 0 ? "#00c870" : gd(t) < 0 ? "#e05050" : "#3d5060",
-                  }}>
-                    {isEmpty ? "—" : gd(t) > 0 ? `+${gd(t)}` : gd(t)}
+                  {/* Goal Difference */}
+                  <span
+                    style={{
+                      fontFamily:
+                        "'Barlow Condensed', sans-serif",
+                      fontSize: 14,
+                      textAlign: "center",
+                      color: isEmpty
+                        ? "#1e2e3a"
+                        : gd(t) > 0
+                        ? "#00c870"
+                        : gd(t) < 0
+                        ? "#e05050"
+                        : "#3d5060",
+                    }}
+                  >
+                    {isEmpty
+                      ? "—"
+                      : gd(t) > 0
+                      ? `+${gd(t)}`
+                      : gd(t)}
                   </span>
 
-                  <span style={{
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                    fontSize: 16, fontWeight: 700,
-                    color: isEmpty ? "#1e2e3a" : "#eef0f6",
-                    textAlign: "center",
-                    background: i < 3 && !isEmpty ? "rgba(0,200,100,0.07)" : "transparent",
-                    borderRadius: 6, padding: "2px 0",
-                  }}>
-                    {isEmpty ? "—" : (t.points ?? "—")}
+                  {/* Points */}
+                  <span
+                    style={{
+                      fontFamily:
+                        "'Barlow Condensed', sans-serif",
+                      fontSize: 16,
+                      fontWeight: 700,
+                      color: isEmpty
+                        ? "#1e2e3a"
+                        : "#eef0f6",
+                      textAlign: "center",
+                      background:
+                        i < 3 && !isEmpty
+                          ? "rgba(0,200,100,0.07)"
+                          : "transparent",
+                      borderRadius: 6,
+                      padding: "2px 0",
+                    }}
+                  >
+                    {isEmpty
+                      ? "—"
+                      : t.points ?? "—"}
                   </span>
                 </div>
               );
             })
           )}
+
+          <style jsx global>{`
+            @keyframes fadeUp {
+              from {
+                opacity: 0;
+                transform: translateY(10px);
+              }
+
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `}</style>
         </div>
       </>}
-
-      <style>{`
-        @keyframes fm-fadeup {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fm-pulse {
-          0%, 100% { opacity: 0.3; }
-          50%       { opacity: 0.6; }
-        }
-      `}</style>
     </div>
   );
 }
